@@ -12,6 +12,7 @@ struct ChatScreen: View {
     @StateObject private var vm = ChatViewModel()
     @State private var apiKeyInput: String = ""
     @State private var isShowingParsedDialog: Bool = false
+    @State private var selectedMessageForExtend: ChatMessage? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +29,7 @@ struct ChatScreen: View {
             }
         }
         .sheet(isPresented: $isShowingParsedDialog) {
-            ParsedResponseSheet(parsed: vm.lastParsed, rawJSON: vm.lastRawJSON)
+            ParsedResponseSheet(message: selectedMessageForExtend)
         }
     }
 
@@ -79,8 +80,11 @@ struct ChatScreen: View {
                     ForEach(vm.messages) { msg in
                         MessageBubble(
                             message: msg,
-                            showExtend: msg.role == .assistant && msg.id == vm.messages.last?.id && vm.lastParsed != nil,
-                            onExtend: { isShowingParsedDialog = true }
+                            showExtend: msg.role == .assistant,
+                            onExtend: {
+                                selectedMessageForExtend = msg
+                                isShowingParsedDialog = true
+                            }
                         )
                         .id(msg.id)
                         .transition(bubbleTransition(for: msg.role))
@@ -143,11 +147,17 @@ private struct MessageBubble: View {
                 .foregroundStyle(.primary)
 
             if showExtend {
-                Button("Extend") {
-                    onExtend()
+                HStack {
+                    Button {
+                        onExtend()
+                    } label: {
+                        Label("Extend", systemImage: "curlybraces")
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.bordered)
+
+                    Spacer(minLength: 0)
                 }
-                .font(.footnote)
-                .buttonStyle(.bordered)
             }
         }
         .padding(12)
@@ -172,62 +182,126 @@ private struct MessageBubble: View {
 }
 
 private struct ParsedResponseSheet: View {
-    let parsed: AgentResponse?
-    let rawJSON: String?
+    let message: ChatMessage?
 
     @Environment(\.dismiss) private var dismiss
+
+    @State private var parsed: AgentResponse? = nil
+    @State private var rawJSON: String? = nil
+    @State private var parseError: String? = nil
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
+
+                    if let parseError {
+                        Text(parseError)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
+
                     if let parsed {
-                        Group {
-                            LabeledContent("Time", value: parsed.time)
-                            LabeledContent("Title", value: parsed.title)
-                            LabeledContent("AI role", value: parsed.ai_role)
+                        GroupBox {
+                            VStack(alignment: .leading, spacing: 10) {
+                                LabeledContent("Time", value: parsed.time)
+                                LabeledContent("Title", value: parsed.title)
+                                LabeledContent("AI role", value: parsed.ai_role)
 
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Key tags").font(.subheadline).foregroundStyle(.secondary)
-                                Text(parsed.key_tags.joined(separator: ", "))
-                                    .font(.body)
-                            }
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Key tags")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text(parsed.key_tags.joined(separator: ", "))
+                                        .font(.body)
+                                }
 
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Answer").font(.subheadline).foregroundStyle(.secondary)
-                                Text(parsed.answer)
-                                    .font(.body)
-                                    .textSelection(.enabled)
+                                Divider().opacity(0.2)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Answer")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text(parsed.answer)
+                                        .font(.body)
+                                        .textSelection(.enabled)
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(.vertical, 2)
-
-                        Divider().opacity(0.2)
                     } else {
-                        Text("Parsed response is not available (JSON parse failed).")
+                        Text("JSON не найден в этом сообщении.")
                             .foregroundStyle(.secondary)
                     }
 
                     if let rawJSON {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Raw JSON").font(.subheadline).foregroundStyle(.secondary)
-                            Text(rawJSON)
-                                .font(.system(.footnote, design: .monospaced))
-                                .textSelection(.enabled)
-                                .padding(10)
-                                .background(Color(UIColor.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        GroupBox {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Raw JSON")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button {
+                                        UIPasteboard.general.string = rawJSON
+                                    } label: {
+                                        Label("Copy", systemImage: "doc.on.doc")
+                                    }
+                                    .font(.footnote)
+                                    .buttonStyle(.bordered)
+                                }
+
+                                Text(rawJSON)
+                                    .font(.system(.footnote, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .padding(10)
+                                    .background(Color(UIColor.secondarySystemBackground))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                 }
                 .padding(16)
             }
-            .navigationTitle("Parsed Agent Response")
+            .navigationTitle("Extend")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close") { dismiss() }
                 }
             }
+            .onAppear {
+                parseSelectedMessage()
+            }
+        }
+    }
+
+    private func parseSelectedMessage() {
+        parseError = nil
+        parsed = nil
+        rawJSON = nil
+
+        guard let text = message?.text, !text.isEmpty else {
+            parseError = "Сообщение пустое."
+            return
+        }
+
+        guard let jsonString = JSONExtractor.extractFirstJSONObject(from: text) else {
+            // Not a JSON message (most likely a clarifying question)
+            return
+        }
+
+        rawJSON = jsonString
+
+        guard let data = jsonString.data(using: String.Encoding.utf8) else {
+            parseError = "Не удалось преобразовать JSON в UTF-8 data."
+            return
+        }
+
+        do {
+            parsed = try JSONDecoder().decode(AgentResponse.self, from: data)
+        } catch {
+            parseError = "Ошибка парсинга JSON: \(error.localizedDescription)"
         }
     }
 }
