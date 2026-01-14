@@ -7,32 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		815F78902F1563DA00EDBB5D /* Ai Advent Chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ai Advent Chat.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		816441E82F181BF10070BAAE /* Ai Advent Love.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "Ai Advent Love.app"; path = "/Users/grigorevmp/Documents/AI-Advent-with-Love/Ai Advent Love/build/Debug-iphoneos/Ai Advent Love.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		81BEFFA42F18138200AF7718 /* Exceptions for "Ai Advent Chat" folder in "Ai Advent Chat" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Assets.xcassets,
-			);
-			target = 815F788F2F1563DA00EDBB5D /* Ai Advent Chat */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		815F78922F1563DA00EDBB5D /* Ai Advent Chat */ = {
+		816441EA2F181BF10070BAAE /* Ai Advent Love */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				81BEFFA42F18138200AF7718 /* Exceptions for "Ai Advent Chat" folder in "Ai Advent Chat" target */,
-			);
-			path = "Ai Advent Chat";
+			path = "Ai Advent Love";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		815F788D2F1563DA00EDBB5D /* Frameworks */ = {
+		816441E52F181BF10070BAAE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -42,83 +29,74 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		815F78872F1563DA00EDBB5D = {
+		816441DF2F181BF10070BAAE = {
 			isa = PBXGroup;
 			children = (
-				815F78922F1563DA00EDBB5D /* Ai Advent Chat */,
-				815F78912F1563DA00EDBB5D /* Products */,
+				816441EA2F181BF10070BAAE /* Ai Advent Love */,
 			);
-			sourceTree = "<group>";
-		};
-		815F78912F1563DA00EDBB5D /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				815F78902F1563DA00EDBB5D /* Ai Advent Chat.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		815F788F2F1563DA00EDBB5D /* Ai Advent Chat */ = {
+		816441E72F181BF10070BAAE /* Ai Advent Love */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 815F789B2F1563DB00EDBB5D /* Build configuration list for PBXNativeTarget "Ai Advent Chat" */;
+			buildConfigurationList = 816441F32F181BF10070BAAE /* Build configuration list for PBXNativeTarget "Ai Advent Love" */;
 			buildPhases = (
-				815F788C2F1563DA00EDBB5D /* Sources */,
-				815F788D2F1563DA00EDBB5D /* Frameworks */,
-				815F788E2F1563DA00EDBB5D /* Resources */,
+				816441E42F181BF10070BAAE /* Sources */,
+				816441E52F181BF10070BAAE /* Frameworks */,
+				816441E62F181BF10070BAAE /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				815F78922F1563DA00EDBB5D /* Ai Advent Chat */,
+				816441EA2F181BF10070BAAE /* Ai Advent Love */,
 			);
-			name = "Ai Advent Chat";
+			name = "Ai Advent Love";
 			packageProductDependencies = (
 			);
-			productName = "Ai Advent Chat";
-			productReference = 815F78902F1563DA00EDBB5D /* Ai Advent Chat.app */;
+			productName = "Ai Advent Love";
+			productReference = 816441E82F181BF10070BAAE /* Ai Advent Love.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		815F78882F1563DA00EDBB5D /* Project object */ = {
+		816441E02F181BF10070BAAE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
-					815F788F2F1563DA00EDBB5D = {
+					816441E72F181BF10070BAAE = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
 			};
-			buildConfigurationList = 815F788B2F1563DA00EDBB5D /* Build configuration list for PBXProject "Ai Advent Chat" */;
+			buildConfigurationList = 816441E32F181BF10070BAAE /* Build configuration list for PBXProject "Ai Advent Love" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 815F78872F1563DA00EDBB5D;
+			mainGroup = 816441DF2F181BF10070BAAE;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 815F78912F1563DA00EDBB5D /* Products */;
+			productRefGroup = 816441DF2F181BF10070BAAE;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				815F788F2F1563DA00EDBB5D /* Ai Advent Chat */,
+				816441E72F181BF10070BAAE /* Ai Advent Love */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		815F788E2F1563DA00EDBB5D /* Resources */ = {
+		816441E62F181BF10070BAAE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -128,7 +106,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		815F788C2F1563DA00EDBB5D /* Sources */ = {
+		816441E42F181BF10070BAAE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -138,7 +116,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		815F78992F1563DB00EDBB5D /* Debug */ = {
+		816441F12F181BF10070BAAE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -202,7 +180,7 @@
 			};
 			name = Debug;
 		};
-		815F789A2F1563DB00EDBB5D /* Release */ = {
+		816441F22F181BF10070BAAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -259,7 +237,7 @@
 			};
 			name = Release;
 		};
-		815F789C2F1563DB00EDBB5D /* Debug */ = {
+		816441F42F181BF10070BAAE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -267,24 +245,19 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BZJRD2829M;
-				DONT_GENERATE_INFOPLIST_FILE = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				GENERATE_PKGINFO_FILE = NO;
-				INFOPLIST_EXPAND_BUILD_SETTINGS = NO;
-				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "grigorevmp.Ai-Advent-Chat";
+				PRODUCT_BUNDLE_IDENTIFIER = "grigorevmp.Ai-Advent-Love";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -296,7 +269,7 @@
 			};
 			name = Debug;
 		};
-		815F789D2F1563DB00EDBB5D /* Release */ = {
+		816441F52F181BF10070BAAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -304,24 +277,19 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BZJRD2829M;
-				DONT_GENERATE_INFOPLIST_FILE = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				GENERATE_PKGINFO_FILE = NO;
-				INFOPLIST_EXPAND_BUILD_SETTINGS = NO;
-				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "grigorevmp.Ai-Advent-Chat";
+				PRODUCT_BUNDLE_IDENTIFIER = "grigorevmp.Ai-Advent-Love";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -336,25 +304,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		815F788B2F1563DA00EDBB5D /* Build configuration list for PBXProject "Ai Advent Chat" */ = {
+		816441E32F181BF10070BAAE /* Build configuration list for PBXProject "Ai Advent Love" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				815F78992F1563DB00EDBB5D /* Debug */,
-				815F789A2F1563DB00EDBB5D /* Release */,
+				816441F12F181BF10070BAAE /* Debug */,
+				816441F22F181BF10070BAAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		815F789B2F1563DB00EDBB5D /* Build configuration list for PBXNativeTarget "Ai Advent Chat" */ = {
+		816441F32F181BF10070BAAE /* Build configuration list for PBXNativeTarget "Ai Advent Love" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				815F789C2F1563DB00EDBB5D /* Debug */,
-				815F789D2F1563DB00EDBB5D /* Release */,
+				816441F42F181BF10070BAAE /* Debug */,
+				816441F52F181BF10070BAAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 815F78882F1563DA00EDBB5D /* Project object */;
+	rootObject = 816441E02F181BF10070BAAE /* Project object */;
 }
