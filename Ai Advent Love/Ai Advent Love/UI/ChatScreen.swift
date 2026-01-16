@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ChatScreen: View {
 
@@ -13,6 +14,9 @@ struct ChatScreen: View {
     @State private var apiKeyInput: String = ""
     @State private var isShowingParsedDialog: Bool = false
     @State private var selectedMessageForExtend: ChatMessage? = nil
+    @State private var isPromptPanelExpanded: Bool = false
+    @State private var selectedPreset: ChatViewModel.SystemPromptPreset = .questionsThenFinalJSON
+    @State private var promptDraft: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,6 +31,8 @@ struct ChatScreen: View {
             if vm.hasAPIKey() {
                 apiKeyInput = "*Change to edit*"
             }
+            promptDraft = vm.systemPrompt
+            selectedPreset = .questionsThenFinalJSON
         }
         .sheet(isPresented: $isShowingParsedDialog) {
             ParsedResponseSheet(message: selectedMessageForExtend)
@@ -37,9 +43,9 @@ struct ChatScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Day 1")
+                    Text("Day 5")
                         .font(.headline)
-                    Text("Groq API + мое первое ios приложение :)")
+                    Text("Agent chat (Changing system prompt)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -63,6 +69,98 @@ struct ChatScreen: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+            }
+
+            // System prompt panel
+            VStack(alignment: .leading, spacing: 10) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isPromptPanelExpanded.toggle()
+                    }
+                    if isPromptPanelExpanded {
+                        // keep draft in sync when opening
+                        promptDraft = vm.systemPrompt
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "slider.horizontal.3")
+                        Text("System prompt")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Image(systemName: isPromptPanelExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if isPromptPanelExpanded {
+                    VStack(alignment: .leading, spacing: 10) {
+
+                        Picker("Preset", selection: $selectedPreset) {
+                            ForEach(ChatViewModel.SystemPromptPreset.allCases) { preset in
+                                Text(preset.rawValue).tag(preset)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: selectedPreset) { _, newValue in
+                            // Apply preset and update draft so user can further tweak
+                            vm.applySystemPromptPreset(newValue)
+                            promptDraft = vm.systemPrompt
+                        }
+
+                        Text("Current system prompt")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+
+                        TextEditor(text: $promptDraft)
+                            .font(.system(.footnote, design: .monospaced))
+                            .frame(minHeight: 110, maxHeight: 180)
+                            .padding(8)
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                        HStack {
+                            Button {
+                                vm.updateSystemPrompt(promptDraft, note: "Manual edit")
+                                // keep in sync
+                                promptDraft = vm.systemPrompt
+                            } label: {
+                                Label("Apply", systemImage: "checkmark.circle.fill")
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Spacer()
+
+                            Text("Changes: \(vm.systemPromptHistory.count)")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if !vm.systemPromptHistory.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Recent changes")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+
+                                ForEach(vm.systemPromptHistory.suffix(3)) { item in
+                                    HStack(spacing: 8) {
+                                        Text(item.time, style: .time)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(item.note ?? "Updated")
+                                            .font(.caption)
+                                            .lineLimit(1)
+                                        Spacer()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(UIColor.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
             }
 
             if let e = vm.errorText {
