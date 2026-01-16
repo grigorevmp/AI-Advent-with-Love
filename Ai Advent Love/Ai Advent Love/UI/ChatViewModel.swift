@@ -157,17 +157,61 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+
+    enum LLMProvider: String, CaseIterable, Identifiable {
+        case groq = "Groq"
+        case claude = "Claude"
+        var id: String { rawValue }
+    }
+
+    /// Selected provider. UI can bind to this.
+    @Published var selectedProvider: LLMProvider = .groq
+
     func saveAPIKey(_ key: String) {
-        do {
-            try KeychainStore.shared.saveAPIKey(key)
-            errorText = nil
-        } catch {
-            errorText = error.localizedDescription
+        saveAPIKey(key, for: selectedProvider)
+    }
+
+    func saveAPIKey(_ key: String, for provider: LLMProvider) {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            errorText = "Похоже, это не ключ"
+            return
+        }
+
+        switch provider {
+        case .groq:
+            do {
+                try KeychainStore.shared.saveGroqAPIKey(trimmed)
+                errorText = nil
+            } catch {
+                errorText = error.localizedDescription
+            }
+
+        case .claude:
+            do {
+                try KeychainStore.shared.saveClaudeAPIKey(trimmed)
+                errorText = nil
+            } catch {
+                errorText = error.localizedDescription
+            }
         }
     }
 
     func hasAPIKey() -> Bool {
-        return (KeychainStore.shared.loadAPIKey()?.isEmpty == false)
+        hasAPIKey(for: selectedProvider)
+    }
+
+    func hasAPIKey(for provider: LLMProvider) -> Bool {
+        return (loadAPIKey(for: provider)?.isEmpty == false)
+    }
+
+    private func loadAPIKey(for provider: LLMProvider) -> String? {
+        switch provider {
+        case .groq:
+            return KeychainStore.shared.loadGroqAPIKey()
+        case .claude:
+            return KeychainStore.shared.loadClaudeAPIKey()
+        }
     }
 
     func send() {
@@ -194,16 +238,21 @@ final class ChatViewModel: ObservableObject {
                     Message(role: $0.role == .user ? "user" : "assistant", content: $0.text)
                 }
 
-                guard let apiKey = KeychainStore.shared.loadAPIKey(), !apiKey.isEmpty else {
+                guard let apiKey = loadAPIKey(for: selectedProvider), !apiKey.isEmpty else {
                     throw NSError(domain: "Chat", code: 1, userInfo: [NSLocalizedDescriptionKey: "API key не задан. Сначала сохраните ключ в настройках."])
                 }
 
-                // TODO: Добавь в GroqClient поддержку max_tokens и прокинь сюда maxOutputTokens,
-                // чтобы модель автоматически ограничивала длину ответа.
+                // Universal client call (Groq / Claude)
+                let provider: GroqClient.Provider = (selectedProvider == .groq) ? .groq : .claude
+
                 let reply = try await client.chat(
+                    provider: provider,
                     apiKey: apiKey,
+                    systemPrompt: systemPrompt,
                     messages: [system] + history,
-                    model: "llama-3.1-8b-instant"
+                    model: (provider == .groq) ? "llama-3.1-8b-instant" : "claude-sonnet-4-20250514",
+                    maxTokens: maxOutputTokens,
+                    temperature: 0.7
                 )
 
                 messages.append(ChatMessage(role: .assistant, text: reply))

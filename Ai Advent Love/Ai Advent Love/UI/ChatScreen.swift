@@ -18,6 +18,15 @@ struct ChatScreen: View {
     @State private var selectedPreset: ChatViewModel.SystemPromptPreset = .questionsThenFinalJSON
     @State private var promptDraft: String = ""
 
+    @State private var isSettingsExpanded: Bool = false
+
+    private var tokenPlaceholder: String {
+        switch vm.selectedProvider {
+        case .groq: return "Вставь Groq API key"
+        case .claude: return "Вставь Claude Platform API key"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -29,10 +38,14 @@ struct ChatScreen: View {
         .onAppear {
             // если ключ уже есть — просто покажем, что он сохранён (не выводим его)
             if vm.hasAPIKey() {
-                apiKeyInput = "*Change to edit*"
+                apiKeyInput = "******** (saved)"
             }
             promptDraft = vm.systemPrompt
             selectedPreset = .questionsThenFinalJSON
+        }
+        .onChange(of: vm.selectedProvider) { _, _ in
+            apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
+            vm.errorText = nil
         }
         .sheet(isPresented: $isShowingParsedDialog) {
             ParsedResponseSheet(message: selectedMessageForExtend)
@@ -45,7 +58,7 @@ struct ChatScreen: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Day 5")
                         .font(.headline)
-                    Text("Agent chat (Changing system prompt)")
+                    Text("Added system prompt set up")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -54,106 +67,161 @@ struct ChatScreen: View {
                 if vm.isSending { ProgressView() }
             }
 
-            HStack(spacing: 10) {
-                TextField("Вставь GroqClient api key", text: $apiKeyInput)
-                    .textFieldStyle(.roundedBorder)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-
-                Button("Сохранить") {
-                    if !apiKeyInput.isEmpty {
-                        vm.saveAPIKey(apiKeyInput)
-                        apiKeyInput = "******** (saved in Keychain)"
-                    } else {
-                        vm.errorText = "Похоже, это не ключ"
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-            }
-
-            // System prompt panel
+            // Settings spoiler (provider + token + system prompt)
             VStack(alignment: .leading, spacing: 10) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        isPromptPanelExpanded.toggle()
+                        isSettingsExpanded.toggle()
                     }
-                    if isPromptPanelExpanded {
-                        // keep draft in sync when opening
+                    if isSettingsExpanded {
                         promptDraft = vm.systemPrompt
+                        apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "slider.horizontal.3")
-                        Text("System prompt")
+                        Image(systemName: "gearshape")
+                        Text("Settings")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         Spacer()
-                        Image(systemName: isPromptPanelExpanded ? "chevron.up" : "chevron.down")
+                        Image(systemName: isSettingsExpanded ? "chevron.up" : "chevron.down")
                             .foregroundStyle(.secondary)
                     }
                 }
                 .buttonStyle(.plain)
 
-                if isPromptPanelExpanded {
-                    VStack(alignment: .leading, spacing: 10) {
+                if isSettingsExpanded {
+                    VStack(alignment: .leading, spacing: 12) {
 
-                        Picker("Preset", selection: $selectedPreset) {
-                            ForEach(ChatViewModel.SystemPromptPreset.allCases) { preset in
-                                Text(preset.rawValue).tag(preset)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .onChange(of: selectedPreset) { _, newValue in
-                            // Apply preset and update draft so user can further tweak
-                            vm.applySystemPromptPreset(newValue)
-                            promptDraft = vm.systemPrompt
-                        }
-
-                        Text("Current system prompt")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-
-                        TextEditor(text: $promptDraft)
-                            .font(.system(.footnote, design: .monospaced))
-                            .frame(minHeight: 110, maxHeight: 180)
-                            .padding(8)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                        HStack {
-                            Button {
-                                vm.updateSystemPrompt(promptDraft, note: "Manual edit")
-                                // keep in sync
-                                promptDraft = vm.systemPrompt
-                            } label: {
-                                Label("Apply", systemImage: "checkmark.circle.fill")
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Spacer()
-
-                            Text("Changes: \(vm.systemPromptHistory.count)")
+                        // Provider
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Provider")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+
+                            Picker("Provider", selection: $vm.selectedProvider) {
+                                ForEach(ChatViewModel.LLMProvider.allCases) { p in
+                                    Text(p.rawValue).tag(p)
+                                }
+                            }
+                            .pickerStyle(.segmented)
                         }
 
-                        if !vm.systemPromptHistory.isEmpty {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Recent changes")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                        // Token
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("API token")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
 
-                                ForEach(vm.systemPromptHistory.suffix(3)) { item in
-                                    HStack(spacing: 8) {
-                                        Text(item.time, style: .time)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text(item.note ?? "Updated")
-                                            .font(.caption)
-                                            .lineLimit(1)
+                            HStack(spacing: 10) {
+                                TextField(tokenPlaceholder, text: $apiKeyInput)
+                                    .textFieldStyle(.roundedBorder)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled(true)
+
+                                Button("Save") {
+                                    let trimmed = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                                    if trimmed.isEmpty || trimmed == "******** (saved)" || trimmed.hasPrefix("********") {
+                                        vm.errorText = "Вставь реальный ключ, а не маску"
+                                        return
+                                    }
+
+                                    vm.saveAPIKey(trimmed)
+                                    apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                        }
+
+                        Divider().opacity(0.2)
+
+                        // System prompt (nested spoiler)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    isPromptPanelExpanded.toggle()
+                                }
+                                if isPromptPanelExpanded {
+                                    promptDraft = vm.systemPrompt
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "slider.horizontal.3")
+                                    Text("System prompt")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Image(systemName: isPromptPanelExpanded ? "chevron.up" : "chevron.down")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            if isPromptPanelExpanded {
+                                VStack(alignment: .leading, spacing: 10) {
+
+                                    Picker("Preset", selection: $selectedPreset) {
+                                        ForEach(ChatViewModel.SystemPromptPreset.allCases) { preset in
+                                            Text(preset.rawValue).tag(preset)
+                                        }
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .onChange(of: selectedPreset) { _, newValue in
+                                        vm.applySystemPromptPreset(newValue)
+                                        promptDraft = vm.systemPrompt
+                                    }
+
+                                    Text("Current system prompt")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+
+                                    TextEditor(text: $promptDraft)
+                                        .font(.system(.footnote, design: .monospaced))
+                                        .frame(minHeight: 110, maxHeight: 180)
+                                        .padding(8)
+                                        .background(Color(UIColor.secondarySystemBackground))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                    HStack {
+                                        Button {
+                                            vm.updateSystemPrompt(promptDraft, note: "Manual edit")
+                                            promptDraft = vm.systemPrompt
+                                        } label: {
+                                            Label("Apply", systemImage: "checkmark.circle.fill")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+
                                         Spacer()
+
+                                        Text("Changes: \(vm.systemPromptHistory.count)")
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    if !vm.systemPromptHistory.isEmpty {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text("Recent changes")
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+
+                                            ForEach(vm.systemPromptHistory.suffix(3)) { item in
+                                                HStack(spacing: 8) {
+                                                    Text(item.time, style: .time)
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                    Text(item.note ?? "Updated")
+                                                        .font(.caption)
+                                                        .lineLimit(1)
+                                                    Spacer()
+                                                }
+                                            }
+                                        }
                                     }
                                 }
+                                .padding(12)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                         }
                     }
@@ -384,22 +452,127 @@ private struct ParsedResponseSheet: View {
             return
         }
 
-        guard let jsonString = JSONExtractor.extractFirstJSONObject(from: text) else {
-            // Not a JSON message (most likely a clarifying question)
+        // 1) Try to extract JSON from fenced code block first
+        if let fenced = extractFencedJSON(from: text) {
+            tryParseAgentResponse(from: fenced)
             return
         }
 
-        rawJSON = jsonString
+        // 2) Try existing extractor (first JSON object)
+        if let jsonString = JSONExtractor.extractFirstJSONObject(from: text) {
+            tryParseAgentResponse(from: jsonString)
+            return
+        }
 
-        guard let data = jsonString.data(using: String.Encoding.utf8) else {
+        // 3) Best-effort: if the whole message looks like JSON
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if (trimmed.hasPrefix("{") && trimmed.hasSuffix("}")) || (trimmed.hasPrefix("[") && trimmed.hasSuffix("]")) {
+            tryParseAgentResponse(from: trimmed)
+            return
+        }
+
+        // No JSON found (most likely a clarifying question)
+    }
+
+    private func tryParseAgentResponse(from json: String) {
+        rawJSON = json
+
+        guard let data = json.data(using: String.Encoding.utf8) else {
             parseError = "Не удалось преобразовать JSON в UTF-8 data."
             return
         }
 
+        // First: direct decode
+        if let direct = try? JSONDecoder().decode(AgentResponse.self, from: data) {
+            parsed = direct
+            return
+        }
+
+        // Fallback: normalize keys/types (case-insensitive, array/object)
         do {
-            parsed = try JSONDecoder().decode(AgentResponse.self, from: data)
+            let any = try JSONSerialization.jsonObject(with: data)
+
+            // If it's an array, take first object
+            let obj: Any
+            if let arr = any as? [Any], let first = arr.first {
+                obj = first
+            } else {
+                obj = any
+            }
+
+            guard let dict = obj as? [String: Any] else {
+                parseError = "JSON найден, но формат не объект."
+                return
+            }
+
+            func valueCI(_ key: String) -> Any? {
+                if let v = dict[key] { return v }
+                let lower = key.lowercased()
+                if let v = dict[lower] { return v }
+                // search case-insensitively
+                for (k, v) in dict {
+                    if k.lowercased() == lower { return v }
+                }
+                return nil
+            }
+
+            let time = (valueCI("time") as? String) ?? ""
+            let answer = (valueCI("answer") as? String) ?? (valueCI("content") as? String) ?? ""
+            let title = (valueCI("title") as? String) ?? ""
+            let aiRole = (valueCI("ai_role") as? String) ?? (valueCI("role") as? String) ?? "assistant"
+
+            var tags: [String] = []
+            if let t = valueCI("key_tags") as? [String] {
+                tags = t
+            } else if let t = valueCI("key_tags") as? String {
+                tags = t.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            } else if let t = valueCI("tags") as? [String] {
+                tags = t
+            }
+
+            let normalized: [String: Any] = [
+                "time": time,
+                "answer": answer,
+                "key_tags": tags,
+                "title": title,
+                "ai_role": aiRole
+            ]
+
+            let normData = try JSONSerialization.data(withJSONObject: normalized)
+            parsed = try JSONDecoder().decode(AgentResponse.self, from: normData)
         } catch {
             parseError = "Ошибка парсинга JSON: \(error.localizedDescription)"
         }
+    }
+
+    private func extractFencedJSON(from text: String) -> String? {
+        // Supports ```json ... ``` or ``` ... ```
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        var inFence = false
+        var buffer: [Substring] = []
+
+        for line in lines {
+            let t = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if t.hasPrefix("```") {
+                if inFence {
+                    // end
+                    break
+                } else {
+                    // start
+                    inFence = true
+                    continue
+                }
+            }
+            if inFence {
+                buffer.append(line)
+            }
+        }
+
+        let candidate = buffer.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !candidate.isEmpty else { return nil }
+        if candidate.hasPrefix("{") || candidate.hasPrefix("[") {
+            return candidate
+        }
+        return nil
     }
 }
