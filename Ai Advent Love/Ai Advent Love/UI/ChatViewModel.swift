@@ -36,7 +36,6 @@ final class ChatViewModel: ObservableObject {
   "title": "...",
   "ai_role": "assistant"
 }
-
 """
 
     enum SystemPromptPreset: String, CaseIterable, Identifiable {
@@ -125,6 +124,16 @@ final class ChatViewModel: ObservableObject {
         updateSystemPrompt(preset.promptText, note: "Preset: \(preset.rawValue)")
     }
 
+    /* Temperature = 0
+    Максимальная точность, одинаковые ответы, почти без вариативности. Подходит для кода, ТЗ, требований, инструкций, аналитики.
+
+    Temperature = 0.7
+    Баланс точности и гибкости. Ответы живые, но стабильные. Подходит для обычного чата, объяснений, ассистентов.
+
+    Temperature = 1.2
+    Высокая креативность, разнообразные формулировки, возможны неточности. Подходит для идей, мозгового штурма, творчества.*/
+    @Published var temperature: Double = 0.7
+
     private let maxOutputTokens: Int = 700
 
     private let client = GroqClient()
@@ -133,6 +142,21 @@ final class ChatViewModel: ObservableObject {
         // Default behavior for the current homework: questions first, then FINAL JSON.
         systemPrompt = SystemPromptPreset.questionsThenFinalJSON.promptText
         systemPromptHistory.append(.init(time: Date(), oldPrompt: "", newPrompt: systemPrompt, note: "Initial"))
+    }
+
+    /// Clears the dialog and allows starting a new TЗ collection flow
+    func clearDialog() {
+        messages.removeAll()
+        inputText = ""
+        errorText = nil
+        lastParsed = nil
+        lastRawJSON = nil
+        isFinalResultReady = false
+
+        // keep system prompt, but mark restart
+        systemPromptHistory.append(
+            .init(time: Date(), oldPrompt: systemPrompt, newPrompt: systemPrompt, note: "Dialog cleared")
+        )
     }
 
     private func handleLLMFinalText(_ text: String) {
@@ -214,6 +238,18 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+    private func effectiveTemperature(for provider: LLMProvider) -> Double {
+        let t = temperature
+        switch provider {
+        case .groq:
+            // Groq doc: 0 is converted internally; keep > 0 and <= 2
+            return min(max(t, 1e-8), 2.0)
+        case .claude:
+            // Claude temperature is typically 0..1
+            return min(max(t, 0.0), 1.0)
+        }
+    }
+
     func send() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
@@ -252,7 +288,7 @@ final class ChatViewModel: ObservableObject {
                     messages: [system] + history,
                     model: (provider == .groq) ? "llama-3.1-8b-instant" : "claude-sonnet-4-20250514",
                     maxTokens: maxOutputTokens,
-                    temperature: 0.7
+                    temperature: effectiveTemperature(for: selectedProvider)
                 )
 
                 messages.append(ChatMessage(role: .assistant, text: reply))

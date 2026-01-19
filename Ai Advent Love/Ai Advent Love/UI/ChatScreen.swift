@@ -62,7 +62,22 @@ struct ChatScreen: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+
                 Spacer()
+
+                // Clear / start new dialog
+                Button {
+                    vm.clearDialog()
+                    apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
+                    promptDraft = vm.systemPrompt
+                    selectedMessageForExtend = nil
+                } label: {
+                    Label("New", systemImage: "trash")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.bordered)
+                .disabled(vm.isSending || vm.messages.isEmpty)
+                .accessibilityLabel("Clear chat")
 
                 if vm.isSending { ProgressView() }
             }
@@ -197,6 +212,34 @@ struct ChatScreen: View {
                                         Text("Changes: \(vm.systemPromptHistory.count)")
                                             .font(.footnote)
                                             .foregroundStyle(.secondary)
+                                    }
+
+                                    Divider().opacity(0.2)
+
+                                    // Temperature
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        HStack {
+                                            Text("Temperature")
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                            Spacer()
+                                            Text(String(format: "%.2f", vm.temperature))
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Slider(value: $vm.temperature, in: 0...2, step: 0.05)
+
+                                        HStack(spacing: 8) {
+                                            Button("0") { vm.temperature = 0 }
+                                            Button("0.7") { vm.temperature = 0.7 }
+                                            Button("1.2") { vm.temperature = 1.2 }
+                                            Spacer()
+                                            Text(vm.selectedProvider == .claude ? "Claude: >1 будет обрезано до 1.0" : "Groq: диапазон до 2.0")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.bordered)
                                     }
 
                                     if !vm.systemPromptHistory.isEmpty {
