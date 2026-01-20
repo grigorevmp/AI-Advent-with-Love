@@ -30,8 +30,8 @@ final class GroqClient {
     }
 
     enum Provider: String, CaseIterable, Identifiable {
-        case groq = "Groq"
-        case claude = "Claude"
+        case groq = "Groq" // Быстрый, неточный, бесплатный
+        case claude = "Claude" // Долгий, точный, платный
         var id: String { rawValue }
     }
 
