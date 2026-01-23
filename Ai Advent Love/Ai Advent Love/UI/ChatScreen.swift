@@ -20,6 +20,12 @@ struct ChatScreen: View {
 
     @State private var isSettingsExpanded: Bool = false
 
+    // Day 9/10 UI
+    @State private var isCompressionExpanded: Bool = false
+    @State private var isMemoryExpanded: Bool = false
+    @State private var isShowingSummarySheet: Bool = false
+    @State private var isShowingMemorySheet: Bool = false
+
     private var tokenPlaceholder: String {
         switch vm.selectedProvider {
         case .groq: return "Вставь Groq API key"
@@ -32,6 +38,7 @@ struct ChatScreen: View {
             header
             Divider().opacity(0.2)
             messagesList
+            tokenStatsBar
             Divider().opacity(0.2)
             composer
         }
@@ -49,6 +56,36 @@ struct ChatScreen: View {
         }
         .sheet(isPresented: $isShowingParsedDialog) {
             ParsedResponseSheet(message: selectedMessageForExtend)
+        }
+        .sheet(isPresented: $isShowingSummarySheet) {
+            NavigationStack {
+                ScrollView {
+                    Text(vm.lastSummaryText.isEmpty ? "(пока нет summary)" : vm.lastSummaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                }
+                .navigationTitle("Summary")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Close") { isShowingSummarySheet = false }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingMemorySheet) {
+            NavigationStack {
+                ScrollView {
+                    Text(vm.memoryStatusText.isEmpty ? "(память пока не подключена)" : vm.memoryStatusText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                }
+                .navigationTitle("Memory")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Close") { isShowingMemorySheet = false }
+                    }
+                }
+            }
         }
     }
 
@@ -151,6 +188,133 @@ struct ChatScreen: View {
 
                         Divider().opacity(0.2)
 
+                        // Day 9 — History compression (nested spoiler)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    isCompressionExpanded.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "text.badge.plus")
+                                    Text("History compression")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Image(systemName: isCompressionExpanded ? "chevron.up" : "chevron.down")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            if isCompressionExpanded {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Toggle("Enable compression", isOn: $vm.compressionEnabled)
+
+                                    Stepper(value: $vm.compressEveryNMessages, in: 5...50, step: 1) {
+                                        Text("Summarize every \(vm.compressEveryNMessages) messages")
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    HStack(spacing: 10) {
+                                        Button {
+                                            isShowingSummarySheet = true
+                                        } label: {
+                                            Label("Show summary", systemImage: "doc.text.magnifyingglass")
+                                        }
+                                        .buttonStyle(.bordered)
+
+                                        Button {
+                                            vm.compressNow()
+                                        } label: {
+                                            Label("Compress now", systemImage: "arrow.triangle.2.circlepath")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .disabled(!vm.compressionEnabled)
+
+                                        Spacer()
+                                    }
+
+                                    Text("Idea: каждые N сообщений делаем summary и храним его вместо оригинала.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                        }
+
+                        // Day 10 — External memory (nested spoiler)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    isMemoryExpanded.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "externaldrive")
+                                    Text("External memory")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Image(systemName: isMemoryExpanded ? "chevron.up" : "chevron.down")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            if isMemoryExpanded {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Toggle("Enable external memory", isOn: $vm.externalMemoryEnabled)
+
+                                    Picker("Backend", selection: $vm.externalMemoryBackend) {
+                                        ForEach(ChatViewModel.ExternalMemoryBackend.allCases) { b in
+                                            Text(b.rawValue).tag(b)
+                                        }
+                                    }
+                                    .pickerStyle(.segmented)
+
+                                    HStack(spacing: 10) {
+                                        Button {
+                                            isShowingMemorySheet = true
+                                        } label: {
+                                            Label("View", systemImage: "eye")
+                                        }
+                                        .buttonStyle(.bordered)
+
+                                        Button {
+                                            vm.saveExternalMemory()
+                                        } label: {
+                                            Label("Save", systemImage: "square.and.arrow.down")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .disabled(!vm.externalMemoryEnabled)
+
+                                        Button {
+                                            vm.clearExternalMemory()
+                                        } label: {
+                                            Label("Clear", systemImage: "trash")
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .disabled(!vm.externalMemoryEnabled)
+
+                                        Spacer()
+                                    }
+
+                                    Text("Goal: хранить summary/факты/промежуточные результаты между запусками (JSON/SQLite).")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                        }
+
+                        Divider().opacity(0.2)
+
                         // System prompt (nested spoiler)
                         VStack(alignment: .leading, spacing: 10) {
                             Button {
@@ -242,6 +406,29 @@ struct ChatScreen: View {
                                         .buttonStyle(.bordered)
                                     }
 
+                                    // Token usage (estimates)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Tokens (estimate)")
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+
+                                        HStack(spacing: 10) {
+                                            Text("req: \(vm.requestTokensEstimate)")
+                                            Text("resp: \(vm.responseTokensEstimate)")
+                                            Text("total: \(vm.totalTokensEstimate)")
+                                            Spacer()
+                                            Text("limit: \(vm.contextLimitTokens)")
+                                        }
+                                        .font(.caption)
+                                        .foregroundStyle(vm.isOverContextLimit ? .red : .secondary)
+
+                                        if vm.isOverContextLimit {
+                                            Text("Превышен лимит контекста: укороти запрос или очисти диалог")
+                                                .font(.caption)
+                                                .foregroundStyle(.red)
+                                        }
+                                    }
+
                                     if !vm.systemPromptHistory.isEmpty {
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text("Recent changes")
@@ -307,6 +494,30 @@ struct ChatScreen: View {
                 withAnimation(.easeOut(duration: 0.2)) {
                     proxy.scrollTo(last.id, anchor: .bottom)
                 }
+            }
+        }
+    }
+
+    private var tokenStatsBar: some View {
+        // Show only after the first send attempt (when we have a limit) or when we have any estimates.
+        let shouldShow = vm.contextLimitTokens > 0 || vm.requestTokensEstimate > 0 || vm.responseTokensEstimate > 0
+
+        return Group {
+            if shouldShow {
+                HStack(spacing: 10) {
+                    Text("req: \(vm.requestTokensEstimate)")
+                    Text("resp: \(vm.responseTokensEstimate)")
+                    Text("total: \(vm.totalTokensEstimate)")
+                    Spacer()
+                    Text("limit: \(vm.contextLimitTokens)")
+                }
+                .font(.caption)
+                .foregroundStyle(vm.isOverContextLimit ? .red : .secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color(UIColor.secondarySystemBackground))
+            } else {
+                EmptyView()
             }
         }
     }
