@@ -49,6 +49,8 @@ struct ChatScreen: View {
             }
             promptDraft = vm.systemPrompt
             selectedPreset = .questionsThenFinalJSON
+            // Restore saved external memory (dialog/summary) on launch
+            vm.restoreFromExternalMemory(forceDialog: false)
         }
         .onChange(of: vm.selectedProvider) { _, _ in
             apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
@@ -75,9 +77,28 @@ struct ChatScreen: View {
         .sheet(isPresented: $isShowingMemorySheet) {
             NavigationStack {
                 ScrollView {
-                    Text(vm.memoryStatusText.isEmpty ? "(память пока не подключена)" : vm.memoryStatusText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
+                    VStack(alignment: .leading, spacing: 12) {
+                        GroupBox {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("External memory")
+                                    .font(.headline)
+
+                                Text("Статус внешней памяти")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+
+                                Divider().opacity(0.2)
+
+                                Text(vm.memoryStatusText.isEmpty ? "(память пока не подключена)" : vm.memoryStatusText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .font(.system(.footnote, design: .monospaced))
+                                    .textSelection(.enabled)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
                 }
                 .navigationTitle("Memory")
                 .toolbar {
@@ -128,6 +149,7 @@ struct ChatScreen: View {
                     if isSettingsExpanded {
                         promptDraft = vm.systemPrompt
                         apiKeyInput = vm.hasAPIKey() ? "******** (saved)" : ""
+                        vm.externalMemoryNoteDraft = ""
                     }
                 } label: {
                     HStack(spacing: 8) {
@@ -276,6 +298,31 @@ struct ChatScreen: View {
                                     }
                                     .pickerStyle(.segmented)
 
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("What to store")
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+
+                                        Picker("What to store", selection: $vm.externalMemoryScope) {
+                                            ForEach(ChatViewModel.ExternalMemoryScope.allCases) { s in
+                                                Text(s.rawValue).tag(s)
+                                            }
+                                        }
+                                        .pickerStyle(.segmented)
+
+                                        Toggle("Auto-save on every send", isOn: $vm.externalMemoryAutoSaveOnSend)
+                                            .font(.subheadline)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Memory note")
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+
+                                        TextField("Заметка к сохранению (необязательно)", text: $vm.externalMemoryNoteDraft)
+                                            .textFieldStyle(.roundedBorder)
+                                    }
+
                                     HStack(spacing: 10) {
                                         Button {
                                             isShowingMemorySheet = true
@@ -285,11 +332,26 @@ struct ChatScreen: View {
                                         .buttonStyle(.bordered)
 
                                         Button {
-                                            vm.saveExternalMemory()
+                                            vm.saveExternalMemory(
+                                                notes: vm.externalMemoryNoteDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                                ? nil
+                                                : vm.externalMemoryNoteDraft
+                                            )
                                         } label: {
                                             Label("Save", systemImage: "square.and.arrow.down")
                                         }
                                         .buttonStyle(.borderedProminent)
+                                        .disabled(!vm.externalMemoryEnabled)
+                                        Spacer()
+                                    }
+
+                                    HStack(spacing: 10) {
+                                        Button {
+                                            vm.restoreFromExternalMemory(forceDialog: true)
+                                        } label: {
+                                            Label("Restore", systemImage: "arrow.clockwise")
+                                        }
+                                        .buttonStyle(.bordered)
                                         .disabled(!vm.externalMemoryEnabled)
 
                                         Button {
@@ -303,7 +365,7 @@ struct ChatScreen: View {
                                         Spacer()
                                     }
 
-                                    Text("Goal: хранить summary/факты/промежуточные результаты между запусками (JSON/SQLite).")
+                                    Text("Сохраняет и восстанавливает контекст между запусками (JSON/SQLite).")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
