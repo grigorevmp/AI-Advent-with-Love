@@ -1,0 +1,12 @@
+{
+  "reminders": [
+    {
+      "id": 1,
+      "title": "пойти на прогулку",
+      "everyMinutes": 0.1667,
+      "createdAt": 1769860313310,
+      "nextAt": 1769860333611,
+      "lastSentAt": 1769860323609
+    }
+  ]
+}
