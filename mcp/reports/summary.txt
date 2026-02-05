@@ -1,0 +1,37 @@
+Query: 
+InputFiles: notes1.txt
+MissingFiles: (none)
+CompressionLevel: medium
+RuntimeRequested: auto
+RuntimeUsed: emulator
+DockerImage: alpine:3.20
+RuntimeCommand: (default)
+CreatedAtUTC: 2026-02-05T14:34:50.632100+00:00
+TotalMatches: 1
+
+Summary:
+File: notes1. txt Content: This project was created back in February 2022; aiming to provide a REST-like interface for the pixoo library. With an update from August 2024, the library's creator decided to implement/integrate a dedicated REST-interface himself.
+
+RuntimeOutput:
+[emulator fallback] docker exit code 143
+File: notes1. txt Content: This project was created back in February 2022; aiming to provide a REST-like interface for the pixoo library. With an update from August 2024, the library's creator decided to implement/integrate a dedicated REST-interface himself.
+
+RuntimeError:
+Unable to find image 'alpine:3.20' locally
+3.20: Pulling from library/alpine
+83b2d7e29698: Pulling fs layer
+
+
+SourceExtract:
+File: notes1.txt
+Content: This project was created back in February 2022; aiming to provide a REST-like interface for the pixoo library.
+With an update from August 2024, the library's creator decided to implement/integrate a dedicated REST-interface himself.
+
+However, pixoo-rest still offers unique features like ...
+
+built-in Swagger UI
+"pass through" endpoints (with example payloads and detailed descriptions)
+(pre-built) container image
+Helm chart
+etc.
+So... I'll keep maintaining the project as long as there's enough interest.
